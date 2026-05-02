@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shiv Gene - Exam Result Portal</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- SheetJS to read Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            max-width: 500px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #1a1a2e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+        }
+
+        .header h1 span {
+            color: #f39c12;
+        }
+
+        .header p {
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .search-area {
+            text-align: center;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: 2px solid #ddd;
+            border-radius: 50px;
+            text-align: center;
+            letter-spacing: 2px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 10px rgba(118, 75, 162, 0.3);
+        }
+
+        .btn-search {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-weight: bold;
+        }
+
+        .btn-search:hover {
+            transform: scale(1.05);
+        }
+
+        .result-card {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            border-radius: 20px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .error-card {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fee;
+            border-left: 5px solid #e74c3c;
+            border-radius: 10px;
+            display: none;
+            color: #c0392b;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #764ba2;
+            display: inline-block;
+        }
+
+        .result-detail {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .result-item {
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .result-item label {
+            display: block;
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .result-item value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .grade-Aplus { color: #27ae60; }
+        .grade-A { color: #2ecc71; }
+        .grade-B { color: #f39c12; }
+        .grade-C { color: #e67e22; }
+        .grade-D { color: #e74c3c; }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: #f0f0f0;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .loader {
+            display: none;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .result-detail { grid-template-columns: 1fr; }
+            .input-group { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>SHIV <span>GENE</span></h1>
+        <p><i class="fas fa-graduation-cap"></i> Exam Result Portal</p>
+    </div>
+
+    <div class="content">
+        <div class="search-area">
+            <div class="input-group">
+                <input type="text" id="rollNo" maxlength="6" placeholder="Enter 6-digit Roll Number" pattern="\d*">
+                <button class="btn-search" onclick="searchResult()">
+                    <i class="fas fa-search"></i> Get Result
+                </button>
+            </div>
+            <div id="loader" class="loader">
+                <i class="fas fa-spinner fa-spin"></i> Loading...
+            </div>
+        </div>
+
+        <div id="resultCard" class="result-card"></div>
+        <div id="errorCard" class="error-card"></div>
+    </div>
+
+    <div class="footer">
+        <i class="fas fa-database"></i> Shiv Gene Technologies | Results are final
+    </div>
+</div>
+
+<script>
+    let excelData = [];
+
+    // Load Excel file - Replace 'results.xlsx' with your actual file path
+    async function loadExcel() {
+        try {
+            const response = await fetch('results.xlsx'); // Place your Excel file in same folder
+            const arrayBuffer = await response.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+            excelData = jsonData;
+            console.log('Excel loaded:', excelData.length, 'records');
+        } catch (error) {
+            console.error('Error loading Excel:', error);
+            document.getElementById('errorCard').innerHTML = '⚠️ Could not load result data. Please contact admin.';
+            document.getElementById('errorCard').style.display = 'block';
+        }
+    }
+
+    function searchResult() {
+        const rollNo = document.getElementById('rollNo').value.trim();
+        const resultCard = document.getElementById('resultCard');
+        const errorCard = document.getElementById('errorCard');
+
+        // Clear previous results
+        resultCard.style.display = 'none';
+        errorCard.style.display = 'none';
+
+        // Validation
+        if (!rollNo || rollNo.length !== 6 || isNaN(rollNo)) {
+            errorCard.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Please enter a valid 6-digit roll number.';
+            errorCard.style.display = 'block';
+            return;
+        }
+
+        // Find student (adjust column name as per your Excel)
+        const student = excelData.find(row => String(row.RollNo) === rollNo || String(row['Roll Number']) === rollNo);
+        
+        if (!student) {
+            errorCard.innerHTML = '<i class="fas fa-user-slash"></i> No result found for Roll No: ' + rollNo;
+            errorCard.style.display = 'block';
+            return;
+        }
+
+        // Build attractive result display
+        let gradeClass = '';
+        if (student.Grade === 'A+') gradeClass = 'grade-Aplus';
+        else if (student.Grade === 'A') gradeClass = 'grade-A';
+        else if (student.Grade === 'B') gradeClass = 'grade-B';
+        else if (student.Grade === 'C') gradeClass = 'grade-C';
+        else if (student.Grade === 'D') gradeClass = 'grade-D';
+
+        resultCard.innerHTML = `
+            <h3><i class="fas fa-id-card"></i> ${student.Name || student.StudentName}</h3>
+            <div class="result-detail">
+                <div class="result-item"><label>📚 Roll Number</label><value>${rollNo}</value></div>
+                <div class="result-item"><label>📖 Subject 1</label><value>${student.Subject1 || 'N/A'}</value></div>
+                <div class="result-item"><label>📖 Subject 2</label><value>${student.Subject2 || 'N/A'}</value></div>
+                <div class="result-item"><label>📖 Subject 3</label><value>${student.Subject3 || 'N/A'}</value></div>
+                <div class="result-item"><label>📊 Total Marks</label><value>${student.Total || 'N/A'}</value></div>
+                <div class="result-item"><label>🎯 Percentage</label><value>${student.Percentage || 'N/A'}%</value></div>
+                <div class="result-item"><label>⭐ Grade</label><value class="${gradeClass}">${student.Grade || 'N/A'}</value></div>
+            </div>
+            <hr style="margin: 15px 0;">
+            <small><i class="fas fa-check-circle"></i> Shiv Gene Results System</small>
+        `;
+        resultCard.style.display = 'block';
+    }
+
+    // Allow Enter key press
+    document.getElementById('rollNo').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') searchResult();
+    });
+
+    // Load Excel when page loads
+    window.onload = loadExcel;
+</script>
+
+</body>
+</html>
